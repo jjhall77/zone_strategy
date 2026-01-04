@@ -5,7 +5,7 @@ library(janitor)
 library(sf)
 
 list.files(here("data"))
-```r
+
 # ── Load spatial + shooting + complaint files (zone_strategy.Rproj) ────────────
 
 
@@ -45,7 +45,17 @@ shooting_ytd <- read_csv(
   mutate(statistical_murder_flag = as.character(statistical_murder_flag))
 
 shootings <- bind_rows(shooting_historic, shooting_ytd) %>%
-  mutate(occur_date = mdy(occur_date))
+  mutate(occur_date = mdy(occur_date)) 
+
+shootings_sf <- shootings %>%
+  distinct(incident_key, .keep_all = T) %>%
+  filter(!is.na(x_coord_cd), !is.na(y_coord_cd)) %>%
+  st_as_sf(
+    coords = c("x_coord_cd", "y_coord_cd"),
+    crs = 2263,     # NY State Plane (US feet) – this is what NYPD uses
+    remove = FALSE
+  )
+
 
 # ── 4) Complaint data (load only; name it csb) ────────────────────────────────
 csb <- read_csv(
@@ -146,8 +156,6 @@ shots_fired_all_sf <- shots_fired_all %>%
   st_as_sf(coords = c("x_coord_cd", "y_coord_cd"), crs = 2263, remove = FALSE)
 
 
-glimpse(shots_fired)
-glimpse(sf2017)
 
 
 
@@ -264,9 +272,22 @@ shooting_long %>%
   print(n = 50)
 
 range(shooting_long$month_date, na.rm = TRUE)
-glimpse(shooting_long)
+
 
 shooting_long <- shooting_long %>%
   group_by(agency) %>%
   mutate(program_start_date = min(month_date, na.rm = TRUE)) %>%
   ungroup()
+
+#ky_cd in csb_sf
+violent_crime <- c(101,105,106); property_crime <- c(107,109,100)
+
+glimpse(csb_sf)
+glimpse(intersection_buffers)
+glimpse(nycb)
+glimpse(nynta)
+glimpse(physical_blocks)
+glimpse(shooting_long)
+glimpse(shootings_sf)
+glimpse(summer_zones)
+glimpse(shots_fired_all_sf)
